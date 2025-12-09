@@ -155,13 +155,18 @@ int main(int, char**){
 
 
     std::unordered_set<std::tuple<long, long>, Hash> updates;
+    std::unordered_set<std::tuple<long, long, bool, long>, Hash1> changes;
+
+    std::unordered_set<std::tuple<long, long>, Hash> updates;
+    std::unordered_set<std::tuple<long, long, bool, long>, Hash1> changes;
+
+
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
             updates.insert({i, j});
         }
     }
 
-    std::unordered_set<std::tuple<long, long, bool, long>, Hash1> changes;
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
             if (rand() % 2 == 0) changes.insert({i, j, 1, 0});
