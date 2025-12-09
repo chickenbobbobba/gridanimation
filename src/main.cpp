@@ -183,10 +183,11 @@ int main(int, char**){
                 updates.insert({(i-1) % grid.width, (j+1) % grid.height});
             };
 
+            addneighbors();
 
-            if (grid.step - grid.grid[i][j].lastupd < 0) {
+            if (grid.step - grid.grid[i][j].lastupd < 0 && false) {
                 addneighbors();
-                changes.insert({i, j, rand() % 2 != 0, grid.grid[i][j].lastupd + 2});
+                changes.insert({i, j, rand() % 2 != 0, grid.step});
             } else if (neighbors < 2 || neighbors > 3) {
                 if (grid.grid[i][j].state == 1) {
                     addneighbors();
@@ -203,8 +204,8 @@ int main(int, char**){
                 double prob = 1/(1+exp(-(1/a) * (grid.step - grid.grid[i][j].lastupd - b)));
                 bool pass = prob > (double)rand()/INT_MAX;
                 if (pass) {
-                    changes.insert({i, j, !grid.grid[i][j].state, grid.step + 2});
                     addneighbors();
+                    changes.insert({i, j, !grid.grid[i][j].state, grid.step});
                 }
             }
         }
