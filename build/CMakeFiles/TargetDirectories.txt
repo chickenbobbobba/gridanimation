@@ -1,0 +1,3 @@
+/home/samb/CPPprojects/gridanimation/build/CMakeFiles/gridanimation.dir
+/home/samb/CPPprojects/gridanimation/build/CMakeFiles/edit_cache.dir
+/home/samb/CPPprojects/gridanimation/build/CMakeFiles/rebuild_cache.dir
