@@ -1,8 +1,8 @@
 [
 {
   "directory": "/home/samb/CPPprojects/gridanimation/build",
-  "command": "/usr/bin/g++ -I/home/samb/CPPprojects/gridanimation/include -g -std=c++23 -Wall -Wextra -Wpedantic -O3 -march=native -fno-omit-frame-pointer -o CMakeFiles/gridanimation.dir/src/main.cpp.o -c /home/samb/CPPprojects/gridanimation/src/main.cpp",
+  "command": "/usr/bin/c++  -I/home/samb/CPPprojects/gridanimation/include -g -std=c++23 -Wall -Wextra -Wpedantic -O3 -march=native -fno-omit-frame-pointer -o CMakeFiles/gridanimation.dir/src/main.cpp.o -c /home/samb/CPPprojects/gridanimation/src/main.cpp",
   "file": "/home/samb/CPPprojects/gridanimation/src/main.cpp",
-  "output": "/home/samb/CPPprojects/gridanimation/build/CMakeFiles/gridanimation.dir/src/main.cpp.o"
+  "output": "CMakeFiles/gridanimation.dir/src/main.cpp.o"
 }
 ]

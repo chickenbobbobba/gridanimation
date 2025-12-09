@@ -13,6 +13,7 @@
 #include <time.h>
 #include <thread>
 #include <chrono>
+#include <unordered_set>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -123,6 +124,26 @@ public:
     }
 };
 
+std::uint64_t hash ( std::uint64_t z ) {
+    z = ( z ^ ( z >> 30 ) ) * std::uint64_t { 0xBF58476D1CE4E5B9 };
+    z = ( z ^ ( z >> 27 ) ) * std::uint64_t { 0x94D049BB133111EB };
+    return z ^ ( z >> 31 );
+}
+
+// Hash for tuple<long, long>
+struct Hash {
+    std::size_t operator()(const std::tuple<long, long>& t) const {
+        return hash(std::get<1>(t) + hash(std::get<0>(t)));
+    }
+};
+
+// Hash for tuple<long, long, bool, long>
+struct Hash1 {
+    std::size_t operator()(const std::tuple<long, long, bool, long>& t) const {
+        return hash(std::get<1>(t) + hash(std::get<0>(t)));
+    }
+};
+
 int main(int, char**){
     srand(time(NULL));
 
@@ -132,14 +153,15 @@ int main(int, char**){
     Grid grid(w * 2, h * 4 - 8);
     Grid temp = grid;
 
-    std::set<std::tuple<long, long>> updates;
+
+    std::unordered_set<std::tuple<long, long>, Hash> updates;
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
             updates.insert({i, j});
         }
     }
 
-    std::set<std::tuple<long, long, bool, long>> changes;
+    std::unordered_set<std::tuple<long, long, bool, long>, Hash1> changes;
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
             if (rand() % 2 == 0) changes.insert({i, j, 1, 0});
@@ -165,7 +187,6 @@ int main(int, char**){
             if (grid.grid[(i+1) % grid.width][(j+0) % grid.height].state == 1) neighbors++;
             if (grid.grid[(i+1) % grid.width][(j+1) % grid.height].state == 1) neighbors++;
             if (grid.grid[(i+0) % grid.width][(j-1) % grid.height].state == 1) neighbors++;
-            if (grid.grid[(i+0) % grid.width][(j+0) % grid.height].state == 1) neighbors++;
             if (grid.grid[(i+0) % grid.width][(j+1) % grid.height].state == 1) neighbors++;
             if (grid.grid[(i-1) % grid.width][(j-1) % grid.height].state == 1) neighbors++;
             if (grid.grid[(i-1) % grid.width][(j+0) % grid.height].state == 1) neighbors++;
@@ -183,8 +204,6 @@ int main(int, char**){
                 updates.insert({(i-1) % grid.width, (j+1) % grid.height});
             };
 
-            addneighbors();
-
             if (grid.step - grid.grid[i][j].lastupd < 0 && false) {
                 addneighbors();
                 changes.insert({i, j, rand() % 2 != 0, grid.step});
@@ -200,7 +219,7 @@ int main(int, char**){
                 }
             } else {
                 double a = 5; // deviation (approx gap between midpoint and half way to 1 or 0. eg a=10, b=100 100 -> 50%, 110 -> 75%, 120 -> 87.5% etc)
-                double b = 300; // switch point
+                double b = 50; // switch point
                 double prob = 1/(1+exp(-(1/a) * (grid.step - grid.grid[i][j].lastupd - b)));
                 bool pass = prob > (double)rand()/INT_MAX;
                 if (pass) {
@@ -210,56 +229,9 @@ int main(int, char**){
             }
         }
 
-        // for (size_t j = 0; j < grid.height; j++) {
-            
-        //     for (size_t i = 0; i < grid.width; i++) {
-        //         int neighbors = 0;
-        //         if (grid.grid[(i+1) % grid.width][(j-1) % grid.height].state == 1) neighbors++;
-        //         if (grid.grid[(i+1) % grid.width][(j+0) % grid.height].state == 1) neighbors++;
-        //         if (grid.grid[(i+1) % grid.width][(j+1) % grid.height].state == 1) neighbors++;
-        //         if (grid.grid[(i+0) % grid.width][(j-1) % grid.height].state == 1) neighbors++;
-        //         if (grid.grid[(i+0) % grid.width][(j+1) % grid.height].state == 1) neighbors++;
-        //         if (grid.grid[(i-1) % grid.width][(j-1) % grid.height].state == 1) neighbors++;
-        //         if (grid.grid[(i-1) % grid.width][(j+0) % grid.height].state == 1) neighbors++;
-        //         if (grid.grid[(i-1) % grid.width][(j+1) % grid.height].state == 1) neighbors++;
-
-        //         if (grid.grid[i][j].age < 0) {
-        //             temp.grid[i][j].age = grid.grid[i][j].age;
-        //             temp.grid[i][j].state ^= (rand() % 5 != 0);
-        //         } else if (neighbors < 2 || neighbors > 3) {
-        //             if (grid.grid[i][j].state != 0) {
-        //                 temp.grid[i][j].state = 0;
-        //                 temp.grid[i][j].age = 0;
-        //             }
-        //         } else if (neighbors == 3) { 
-        //             if (grid.grid[i][j].state != 1) {
-        //                 temp.grid[i][j].state = 1;
-        //                 temp.grid[i][j].age = 0;
-        //             }
-        //         } else {
-        //             temp.grid[i][j].state = grid.grid[i][j].state;
-        //         }
-        //         temp.grid[i][j].age++;
-        //     }
-        // }
-
-        // for (size_t j = 0; j < grid.height; j++) {
-        //     for (size_t i = 0; i < grid.width; i++) {
-        //         grid.grid[i][j] = temp.grid[i][j];
-        //         double a = 5; // deviation (approx gap between midpoint and half way to 1 or 0. eg a=10, b=100 100 -> 50%, 110 -> 75%, 120 -> 87.5% etc)
-        //         double b = 300; // switch point
-        //         double prob = 1/(1+exp(-(1/a) * (grid.grid[i][j].age - b)));
-        //         bool pass = prob > (double)rand()/INT_MAX;
-        //         if (pass) {
-        //             grid.grid[i][j].age = -1;
-        //         }
-
-        //     }
-        // }
         grid.step++;
         grid.printBraille();
         // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
     }
 
 }
