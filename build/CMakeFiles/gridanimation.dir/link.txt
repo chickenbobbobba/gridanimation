@@ -1,1 +1,0 @@
-/usr/bin/c++ -g -fsanitize=address -Wl,--dependency-file=CMakeFiles/gridanimation.dir/link.d CMakeFiles/gridanimation.dir/src/main.cpp.o -o gridanimation  -lfftw3 -lpthread -lasan
