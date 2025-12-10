@@ -220,7 +220,7 @@ int main(int argc, char** argv){
     boost::unordered_flat_set<std::tuple<long, long, bool, long>, Hash1> changes;
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
-            if (argv[1][0] == '2' && rand() % 20 == 0) changes.insert({i, j, 1, 0});
+            if (argv[1][0] == '2' && rand() % 10 == 0) changes.insert({i, j, 1, 0});
         }
     }
 
@@ -345,8 +345,8 @@ int main(int argc, char** argv){
         if (argv[1][0] == '1') {
             for (size_t j = 0; j < grid.height; j++) {
                 for (size_t i = 0; i < grid.width; i++) {         
-                    double a = 1; // deviation (approx gap between midpoint and half way to 1 or 0. eg a=10, b=100 100 -> 50%, 110 -> 75%, 120 -> 87.5% etc)
-                    double b = 1200; // switch point
+                    double a = 200; // deviation (approx gap between midpoint and half way to 1 or 0. eg a=10, b=100 100 -> 50%, 110 -> 75%, 120 -> 87.5% etc)
+                    double b = 2000; // switch point
                     double prob = 1/(1+exp(-(1/a) * (grid.step - grid.grid[i][j].lastupd - b)));
                     bool pass = prob > (double)rand()/INT_MAX;
                     if (pass) {
