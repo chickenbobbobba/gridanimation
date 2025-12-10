@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <boost/unordered/unordered_flat_map_fwd.hpp>
 #include <chrono>
 #include <climits>
@@ -15,7 +16,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <unordered_set>
 #include <boost/unordered/unordered_flat_set.hpp>
 
 #ifdef _WIN32
@@ -94,18 +94,16 @@ public:
         }
     }
 
-    void printBraille(char live[], char mult[]) {
-        std::string out;
+    void printBraille(char live[], char mult[], long step, std::string& out) {
         out.clear();
-        
         out += std::to_string(step);
-        out.append("-");
+        out.append("--live:");
         for (int i = 0; i < 9; i++) out += std::to_string((long)live[i]);
-        out.append("-");
+        out.append("--born:");
         for (int i = 0; i < 9; i++) out += std::to_string((long)mult[i]);
         auto temp = out.size();
 
-        for (size_t i = 0; i < width/2 - 1 - temp; i++) out.append("-");
+        for (size_t i = temp; i < width/2-1; i++) out.append("-");
 
         out.append("-\n");
 
@@ -128,14 +126,39 @@ public:
                 base = base | grid[j+0][i+3].state << 6;
                 base = base | grid[j+1][i+3].state << 7;
 
-                std::array<std::string_view, 256> braille = {"⠀","⠁","⠂","⠃","⠄","⠅","⠆","⠇","⠈","⠉","⠊","⠋","⠌","⠍","⠎","⠏","⠐","⠑","⠒","⠓","⠔","⠕","⠖","⠗","⠘","⠙","⠚","⠛","⠜","⠝","⠞","⠟","⠠","⠡","⠢","⠣","⠤","⠥","⠦","⠧","⠨","⠩","⠪","⠫","⠬","⠭","⠮","⠯","⠰","⠱","⠲","⠳","⠴","⠵","⠶","⠷","⠸","⠹","⠺","⠻","⠼","⠽","⠾","⠿","⡀","⡁","⡂","⡃","⡄","⡅","⡆","⡇","⡈","⡉","⡊","⡋","⡌","⡍","⡎","⡏","⡐","⡑","⡒","⡓","⡔","⡕","⡖","⡗","⡘","⡙","⡚","⡛","⡜","⡝","⡞","⡟","⡠","⡡","⡢","⡣","⡤","⡥","⡦","⡧","⡨","⡩","⡪","⡫","⡬","⡭","⡮","⡯","⡰","⡱","⡲","⡳","⡴","⡵","⡶","⡷","⡸","⡹","⡺","⡻","⡼","⡽","⡾","⡿","⢀","⢁","⢂","⢃","⢄","⢅","⢆","⢇","⢈","⢉","⢊","⢋","⢌","⢍","⢎","⢏","⢐","⢑","⢒","⢓","⢔","⢕","⢖","⢗","⢘","⢙","⢚","⢛","⢜","⢝","⢞","⢟","⢠","⢡","⢢","⢣","⢤","⢥","⢦","⢧","⢨","⢩","⢪","⢫","⢬","⢭","⢮","⢯","⢰","⢱","⢲","⢳","⢴","⢵","⢶","⢷","⢸","⢹","⢺","⢻","⢼","⢽","⢾","⢿","⣀","⣁","⣂","⣃","⣄","⣅","⣆","⣇","⣈","⣉","⣊","⣋","⣌","⣍","⣎","⣏","⣐","⣑","⣒","⣓","⣔","⣕","⣖","⣗","⣘","⣙","⣚","⣛","⣜","⣝","⣞","⣟","⣠","⣡","⣢","⣣","⣤","⣥","⣦","⣧","⣨","⣩","⣪","⣫","⣬","⣭","⣮","⣯","⣰","⣱","⣲","⣳","⣴","⣵","⣶","⣷","⣸","⣹","⣺","⣻","⣼","⣽","⣾","⣿"};
+                double avg =    grid[j+0][i+0].lastupd +
+                                grid[j+0][i+1].lastupd +
+                                grid[j+0][i+2].lastupd +
+                                grid[j+1][i+0].lastupd +
+                                grid[j+1][i+1].lastupd +
+                                grid[j+1][i+2].lastupd +
+                                grid[j+0][i+3].lastupd +
+                                grid[j+1][i+3].lastupd;
+
+                avg = std::max(0.0, 8 * step - avg);
+                avg /= 8;
+                // int grayLevel = 232 + (long)(1.5*log(avg + 1)) % 24;
+                int grayLevel = (long)(2*sqrt(avg)) % 256;
+
+                static const std::array<std::string_view, 256> braille = {"⠀","⠁","⠂","⠃","⠄","⠅","⠆","⠇","⠈","⠉","⠊","⠋","⠌","⠍","⠎","⠏","⠐","⠑","⠒","⠓","⠔","⠕","⠖","⠗","⠘","⠙","⠚","⠛","⠜","⠝","⠞","⠟","⠠","⠡","⠢","⠣","⠤","⠥","⠦","⠧","⠨","⠩","⠪","⠫","⠬","⠭","⠮","⠯","⠰","⠱","⠲","⠳","⠴","⠵","⠶","⠷","⠸","⠹","⠺","⠻","⠼","⠽","⠾","⠿","⡀","⡁","⡂","⡃","⡄","⡅","⡆","⡇","⡈","⡉","⡊","⡋","⡌","⡍","⡎","⡏","⡐","⡑","⡒","⡓","⡔","⡕","⡖","⡗","⡘","⡙","⡚","⡛","⡜","⡝","⡞","⡟","⡠","⡡","⡢","⡣","⡤","⡥","⡦","⡧","⡨","⡩","⡪","⡫","⡬","⡭","⡮","⡯","⡰","⡱","⡲","⡳","⡴","⡵","⡶","⡷","⡸","⡹","⡺","⡻","⡼","⡽","⡾","⡿","⢀","⢁","⢂","⢃","⢄","⢅","⢆","⢇","⢈","⢉","⢊","⢋","⢌","⢍","⢎","⢏","⢐","⢑","⢒","⢓","⢔","⢕","⢖","⢗","⢘","⢙","⢚","⢛","⢜","⢝","⢞","⢟","⢠","⢡","⢢","⢣","⢤","⢥","⢦","⢧","⢨","⢩","⢪","⢫","⢬","⢭","⢮","⢯","⢰","⢱","⢲","⢳","⢴","⢵","⢶","⢷","⢸","⢹","⢺","⢻","⢼","⢽","⢾","⢿","⣀","⣁","⣂","⣃","⣄","⣅","⣆","⣇","⣈","⣉","⣊","⣋","⣌","⣍","⣎","⣏","⣐","⣑","⣒","⣓","⣔","⣕","⣖","⣗","⣘","⣙","⣚","⣛","⣜","⣝","⣞","⣟","⣠","⣡","⣢","⣣","⣤","⣥","⣦","⣧","⣨","⣩","⣪","⣫","⣬","⣭","⣮","⣯","⣰","⣱","⣲","⣳","⣴","⣵","⣶","⣷","⣸","⣹","⣺","⣻","⣼","⣽","⣾","⣿"};
                 long idx = base & 0xFF;
-                out.append(braille[idx]);
+
+                if (base == 0) {
+                    out.append("\033[38;2;" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + "m"); // set foreground
+                    out.append("\033[48;2;" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + "m"); // set background
+                    out.append("#\033[0m");
+                } else {
+                    out.append("\033[38;2;" + std::to_string(255-grayLevel) + ";" + std::to_string(255-grayLevel) + ";" + std::to_string(255-grayLevel) + "m");
+                    out.append("\033[48;2;" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + "m");
+                    out.append(braille[idx]);
+                    out.append("\033[0m");
+                }   
             }
             out.append("\n");
         }
+        for (size_t i = 0; i < width/2; i++) out.append("-");
+        out.append("\033[0m");
         std::cout << "\033[1;1H" << out << std::flush;
-        // std::cout << out.capacity() << std::endl;
     }
 };
 
@@ -148,24 +171,24 @@ std::uint64_t hash ( std::uint64_t z ) {
 // Hash for tuple<long, long>
 struct Hash {
     std::size_t operator()(const std::tuple<long, long>& t) const {
-        return hash(std::get<1>(t) + hash(std::get<0>(t)));
+        return (std::get<1>(t)<<32) + (hash(std::get<0>(t)) & 0xFFFF);
     }
 };
 
 // Hash for tuple<long, long, bool, long>
 struct Hash1 {
     std::size_t operator()(const std::tuple<long, long, bool, long>& t) const {
-        return hash(std::get<1>(t) + hash(std::get<0>(t)));
+        return (std::get<1>(t)<<32) + (hash(std::get<0>(t)) & 0xFFFF);
     }
 };
 
 int main(int argc, char** argv){
 
+    char live[9] = {0,0,1,1,0,0,0,0,0};
     char mult[9] = {0,0,0,1,0,0,0,0,0};
-    char live[9] = {1,1,0,0,1,1,1,1,1};
     if (argc > 3) {
-        memcpy(&mult, argv[3], 9);
-        memcpy(&live, argv[4], 9);
+        memcpy(&live, argv[3], 9);
+        memcpy(&mult, argv[4], 9);
         for (int i = 0 ; i < 9; i++) {
             live[i] -= 48;
         }
@@ -185,50 +208,68 @@ int main(int argc, char** argv){
 
     boost::unordered_flat_set<std::tuple<long, long>, Hash> updates;
     boost::unordered_flat_set<std::tuple<long, long, bool, long>, Hash1> changes;
-
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
-            // updates.insert({i, j});
+            if (argv[1][0] == '2' && rand() % 20 == 0) changes.insert({i, j, 1, 0});
         }
     }
 
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
-            changes.insert({i, j, 0, -300});
+            updates.insert({i, j});
         }
     }
+
 
     using namespace std::chrono;
     using namespace std::chrono_literals;
     double framerate = 1.0 / std::stod(argv[2]); // Use stod for double
     auto next = std::chrono::steady_clock::now() + std::chrono::duration<double>(framerate);
+    auto nextsync = std::chrono::steady_clock::now();
+    bool skip = false;
     for (;;) {
-        std::this_thread::sleep_until(next);
-        next += std::chrono::duration<double>(framerate);
+        grid.step++;
 
         getTerminalSize(w, h);
-
-        if (grid.resize(w * 2, h * 4 - 8)) {
-            for (size_t j = 0; j < grid.height; j++) {
-                for (size_t i = 0; i < grid.width; i++) {
-                    if (grid.grid[i][j].lastupd == -1) {
-                        changes.insert({i, j, 0, grid.step});
-                    }           
-                }
-            }
-        }
+        grid.resize(w * 2, h * 4 - 8);
 
         for (auto [i,j,val,lastupd] : changes) {
             if (i >= w * 2 || j >= h * 4 - 8) {
                 continue;
             }
-            grid.grid[i][j] = {val, lastupd};
+            grid.grid[i][j] = {val, grid.step};
         }
 
         changes.clear();
-        auto newUpdates = updates;
+
+        boost::unordered_flat_set<std::tuple<long,long>, Hash> newUpdates;
+        newUpdates.swap(updates);
+
         updates.clear();
         
+        if (newUpdates.size() == 0 || skip) {
+            for (int i = 0; i < sqrt(w * h) * 3; i++) {
+                long a = std::max(0, rand() % (w * 2));
+                long b = std::max(0, rand() % (h * 4 - 8));
+                changes.insert({a, b, 1, 0});
+                updates.insert({a, b});
+            }
+            if (newUpdates.size() < 64) skip = true;
+            else skip = false;
+            continue;
+        }
+
+        std::this_thread::sleep_until(next);
+        next += std::chrono::duration<double>(framerate);
+
+        std::string out;
+        out.reserve(w * h * 8);
+        if (nextsync < std::chrono::steady_clock::now()) {
+            grid.printBraille(live, mult, grid.step, out);
+            nextsync += 20ms;
+        }
+
+
         for (auto [i, j] : newUpdates) {
             if (i >= w * 2 || j >= h * 4 - 8) {
                 continue;
@@ -257,7 +298,7 @@ int main(int argc, char** argv){
             };
 
 
-            if (live[neighbors]) {
+            if (!live[neighbors]) {
                 if (grid.grid[i][j].state == 1) {
                     addneighbors();
                     changes.insert({i, j, 0, grid.step});
@@ -268,15 +309,9 @@ int main(int argc, char** argv){
                     changes.insert({i, j, 1, grid.step});
                 }
             } else {
-
-            }
-        }
-
-        if (argv[1][0] == '1') {
-            for (size_t j = 0; j < grid.height; j++) {
-                for (size_t i = 0; i < grid.width; i++) {         
-                    double a = 6; // deviation (approx gap between midpoint and half way to 1 or 0. eg a=10, b=100 100 -> 50%, 110 -> 75%, 120 -> 87.5% etc)
-                    double b = 300; // switch point
+                if (argv[1][0] == '2') {
+                    double a = 100; // deviation
+                    double b = 4000; // switch point
                     double prob = 1/(1+exp(-(1/a) * (grid.step - grid.grid[i][j].lastupd - b)));
                     bool pass = prob > (double)rand()/INT_MAX;
                     if (pass) {
@@ -286,9 +321,20 @@ int main(int argc, char** argv){
                 }
             }
         }
-        grid.step++;
-        grid.printBraille(live, mult);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
 
+        if (argv[1][0] == '1') {
+            for (size_t j = 0; j < grid.height; j++) {
+                for (size_t i = 0; i < grid.width; i++) {         
+                    double a = 1; // deviation (approx gap between midpoint and half way to 1 or 0. eg a=10, b=100 100 -> 50%, 110 -> 75%, 120 -> 87.5% etc)
+                    double b = 1200; // switch point
+                    double prob = 1/(1+exp(-(1/a) * (grid.step - grid.grid[i][j].lastupd - b)));
+                    bool pass = prob > (double)rand()/INT_MAX;
+                    if (pass) {
+                        changes.insert({i, j, !grid.grid[i][j].state, grid.step});
+                        updates.insert({i, j});
+                    }
+                }
+            }
+        }
+    }
 }
