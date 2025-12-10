@@ -11,9 +11,7 @@ cmake_policy(SET CMP0072 NEW)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_compile_options(-Wall -Wextra -Wpedantic -fno-omit-frame-pointer)
-
-# find_package(boost REQUIRED)
+add_compile_options(-Wall -Wextra -Wpedantic -march=native -fno-omit-frame-pointer)
 
 file(GLOB_RECURSE SOURCES
     CONFIGURE_DEPENDS    
@@ -23,8 +21,8 @@ file(GLOB_RECURSE SOURCES
 
 add_executable(gridanimation ${SOURCES})
 target_include_directories(gridanimation PRIVATE ${CMAKE_SOURCE_DIR}/include ${FFTW3_INCLUDE_DIRS})
-# target_link_libraries(gridanimation PRIVATE boost)
-target_link_options(gridanimation PRIVATE -static)
+# target_link_libraries(gridanimation PRIVATE fftw3 pthread asan)
+# target_link_options(gridanimation PRIVATE -fsanitize=address)
 
 
 

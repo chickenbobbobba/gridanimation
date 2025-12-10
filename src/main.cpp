@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <future>
 #include <iostream>
 #include <ostream>
 #include <string>
@@ -95,6 +96,9 @@ public:
     }
 
     void printBraille(char live[], char mult[], long step, std::string& out) {
+        std::ios::sync_with_stdio(false);
+        std::setvbuf(stdout, nullptr, _IOFBF, BUFSIZ * 10);   
+
         out.clear();
         out += std::to_string(step);
         out.append("--live:");
@@ -152,13 +156,19 @@ public:
                     out.append("\033[48;2;" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + ";" + std::to_string(grayLevel) + "m");
                     out.append(braille[idx]);
                     out.append("\033[0m");
+
                 }   
             }
             out.append("\n");
         }
         for (size_t i = 0; i < width/2; i++) out.append("-");
         out.append("\033[0m");
-        std::cout << "\033[1;1H" << out << std::flush;
+        std::cout << "\033[?2026h"; // Enable synchronized update
+        std::cout << "\033[1;1H";
+        std::cout.write(out.data(), out.size());
+        std::cout << "\033[0m";
+        std::cout << "\033[?2026l"; // Disable + flush + render atomically
+        std::cout.flush();   
     }
 };
 
@@ -225,8 +235,10 @@ int main(int argc, char** argv){
     using namespace std::chrono_literals;
     double framerate = 1.0 / std::stod(argv[2]); // Use stod for double
     auto next = std::chrono::steady_clock::now() + std::chrono::duration<double>(framerate);
-    auto nextsync = std::chrono::steady_clock::now();
     bool skip = false;
+
+    std::thread printThread;
+
     for (;;) {
         grid.step++;
 
@@ -264,11 +276,19 @@ int main(int argc, char** argv){
 
         std::string out;
         out.reserve(w * h * 8);
-        if (nextsync < std::chrono::steady_clock::now()) {
-            grid.printBraille(live, mult, grid.step, out);
-            nextsync += 20ms;
-        }
 
+        static std::future<void> printFuture;
+
+        if (!printFuture.valid() || printFuture.wait_for(0ms) == std::future_status::ready) {
+
+            printFuture = std::async(std::launch::async, [=, frame = std::move(out)]() mutable {
+                try {
+                    grid.printBraille(live, mult, grid.step, frame);
+                } catch (...) {
+
+                }
+            });
+        }
 
         for (auto [i, j] : newUpdates) {
             if (i >= w * 2 || j >= h * 4 - 8) {
