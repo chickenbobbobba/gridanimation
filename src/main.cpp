@@ -181,14 +181,14 @@ std::uint64_t hash ( std::uint64_t z ) {
 // Hash for tuple<long, long>
 struct Hash {
     std::size_t operator()(const std::tuple<long, long>& t) const {
-        return (std::get<1>(t)<<32) + (hash(std::get<0>(t)) & 0xFFFF);
+        return (std::get<1>(t)<<32) + ((std::get<0>(t)) & 0xFFFF);
     }
 };
 
 // Hash for tuple<long, long, bool, long>
 struct Hash1 {
     std::size_t operator()(const std::tuple<long, long, bool, long>& t) const {
-        return (std::get<1>(t)<<32) + (hash(std::get<0>(t)) & 0xFFFF);
+        return (std::get<1>(t)<<32) + ((std::get<0>(t)) & 0xFFFF);
     }
 };
 
@@ -220,7 +220,7 @@ int main(int argc, char** argv){
     boost::unordered_flat_set<std::tuple<long, long, bool, long>, Hash1> changes;
     for (size_t j = 0; j < grid.height; j++) {
         for (size_t i = 0; i < grid.width; i++) { 
-            if (argv[1][0] == '2' && rand() % 10 == 0) changes.insert({i, j, 1, 0});
+            if (argv[1][0] == '2' && rand() % 10 == 0) changes.insert({i, j, 1, -1000000});
         }
     }
 
@@ -238,7 +238,13 @@ int main(int argc, char** argv){
     bool skip = false;
 
     std::thread printThread;
+    std::string out;
+    out.reserve(w * h * 8);
 
+    static std::future<void> printFuture;
+    boost::unordered_flat_set<std::tuple<long,long>, Hash> newUpdates;
+
+    
     for (;;) {
         grid.step++;
 
@@ -253,10 +259,8 @@ int main(int argc, char** argv){
         }
 
         changes.clear();
-
-        boost::unordered_flat_set<std::tuple<long,long>, Hash> newUpdates;
+        newUpdates.clear();
         newUpdates.swap(updates);
-
         updates.clear();
         
         if (newUpdates.size() == 0 || skip) {
@@ -271,16 +275,11 @@ int main(int argc, char** argv){
             continue;
         }
 
+        
         std::this_thread::sleep_until(next);
         next += std::chrono::duration<double>(framerate);
 
-        std::string out;
-        out.reserve(w * h * 8);
-
-        static std::future<void> printFuture;
-
         if (!printFuture.valid() || printFuture.wait_for(0ms) == std::future_status::ready) {
-
             printFuture = std::async(std::launch::async, [=, frame = std::move(out)]() mutable {
                 try {
                     grid.printBraille(live, mult, grid.step, frame);
