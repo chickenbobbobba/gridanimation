@@ -193,6 +193,7 @@ struct Hash1 {
 };
 
 int main(int argc, char** argv){
+    std::cout << std::endl;
 
     char live[9] = {0,0,1,1,0,0,0,0,0};
     char mult[9] = {0,0,0,1,0,0,0,0,0};
